@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2ET – Mapa kompetencí</title>
+<!--
+  AUTOROVANÝ NÁSTROJ (ne generated-view). Data v bloku DATA níže – edituj přímo zde.
+  cr = kritičnost po typech org., 5 znaků [Plná, Advokační, Komunikační, Influence, Klub]; r/o/g.
+  h = holdery, 9 číslic [členové týmu]; 2=silně,1=částečně,0=ne.
+  Privátní · 99_PRIVATE · nepublikovat. Souhrnný 3-osobní list: worksheet.html
+-->
+<style>
+  :root{
+    --navy:#072942; --blue:#1840A2; --teal:#1AD3B8; --green:#7FF899;
+    --arch:#1f6f6e; --archtint:#eaf5f4; --archline:#cfe6e3;
+    --paper:#f6f3ec; --card:#ffffff; --ink:#13202b; --muted:#5c6b76; --line:#e3ddd1;
+    --red:#c0392b; --orange:#d98a26; --grn:#3a9d5d;
+    --uniq:#0e7a63; --uniqbg:#e8f7f1; --stropbg:#fdf3e3; --stropbar:#c98a2b;
+    --verbg:#eef2fb; --verbar:#1840A2; --verink:#27416f;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--paper); color:var(--ink);
+    font-family:"Montserrat",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1240px; margin:0 auto; padding:24px 24px 80px}
+  header.top{display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:10px 24px; border-bottom:3px solid var(--navy); padding-bottom:13px; margin-bottom:14px}
+  header.top h1{font-size:22px; margin:0; color:var(--navy); font-weight:700}
+  header.top .htxt{flex:1; min-width:340px}
+  header.top .sub{color:var(--muted); font-size:12px; line-height:1.45; margin-top:5px; max-width:780px}
+  header.top .sub p{margin:0} header.top .sub p+p{margin-top:6px}
+  header.top .hmeta{text-align:right; flex-shrink:0}
+  header.top .draft{font-size:11px; line-height:1.5; color:var(--muted); white-space:nowrap}
+  header.top .draft b{color:var(--red)}
+  a.link{color:var(--blue); text-decoration:none; font-weight:600; font-size:12.5px}
+  .wip{border-top:3px solid var(--navy); margin:26px 0 6px; padding-top:11px; color:var(--muted); font-size:13px; font-weight:600}
+  a.link:hover{text-decoration:underline}
+
+  .legend{display:flex; gap:20px; flex-wrap:wrap; font-size:11.5px; color:var(--muted); margin:4px 0 8px; align-items:center}
+  .legend b{color:var(--ink); font-weight:600}
+  .legend .grp{display:flex; gap:11px; align-items:center; flex-wrap:wrap}
+  .cdot{width:11px; height:11px; border-radius:50%; display:inline-block; margin-right:4px; vertical-align:-1px}
+  .cred{background:var(--red)} .corange{background:var(--orange)} .cgreen{background:var(--grn)}
+  .cempty{background:transparent; border:1px solid #d8d0bf; box-sizing:border-box}
+  .hdot{display:inline-block; width:14px; height:14px; border-radius:50%; vertical-align:-2px}
+  .h2{background:var(--navy)} .h1.half{background:linear-gradient(90deg,var(--navy) 50%,#fff 50%); border:1px solid var(--navy)}
+  .shadekey{display:inline-block; width:12px; height:12px; border-radius:3px; background:#123040; vertical-align:-1px; margin-right:4px}
+  .pinkkey{display:inline-block; width:12px; height:12px; border-radius:3px; background:#fbe0e3; border:1px solid #e9b8bd; vertical-align:-2px; margin-right:2px}
+  .pinkkey.deep{background:#f0939c; border-color:#e07b86}
+  .archkey{font-size:11px; color:var(--muted); background:var(--archtint); border:1px solid var(--archline); border-radius:8px; padding:7px 12px; margin:0 0 16px}
+  .archkey b{color:var(--arch)}
+  .archkey .a{white-space:nowrap}
+  .controls{margin:0 0 10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; min-height:29px}
+  .btn{font:inherit; font-size:11.5px; padding:5px 11px; border:1px solid var(--line); background:#fff; border-radius:7px; cursor:pointer; color:var(--navy)}
+  .btn:hover{background:#f0ece2}
+  .filterbar{display:inline-flex; gap:8px; align-items:center; margin-left:8px; padding-left:12px; border-left:1px solid var(--line)}
+  .filterbar.empty{display:none}
+  .filterbar .lab{color:var(--muted); font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:.5px; margin-right:2px}
+  .ftag{font-size:11.5px; padding:2px 9px; border-radius:12px; color:#fff; font-weight:600}
+  .ftag.arch{background:var(--arch)} .ftag.person{background:#a8742a}
+  .fcount{font-size:11px; color:var(--muted)}
+  .clearf{font:inherit; font-size:11.5px; border:none; background:none; color:var(--arch); cursor:pointer; text-decoration:underline}
+  /* trychtýř ⧩ v záhlaví sloupců = filtr na ten sloupec */
+  .hfilt{display:block; width:18px; height:16px; margin:3px auto 0; border-radius:4px; opacity:.5; cursor:pointer; line-height:0; padding:2px 0}
+  .hfilt:hover{opacity:1; background:rgba(255,255,255,.2)}
+  .hfilt.on{opacity:1; background:#fff}
+  .hfilt .fn{fill:currentColor; vertical-align:middle}
+  .archead .hfilt.on{color:var(--arch)} .colhead .hfilt.on{color:#a8742a}
+  .archead.fsel, .colhead.fsel{outline:2px solid var(--arch); outline-offset:-2px}
+  .colhead.fsel, .pcol.fsel{outline:2px solid #a8742a; outline-offset:-2px}
+  .acell.fsel{background:#eef6f5 !important}
+  .cell.fsel:not(.solo-light):not(.solo-deep){background:#f7efe1 !important}
+
+  .mxscroll{overflow:visible; border-radius:10px}
+  @media(max-width:1100px){.mxscroll{overflow-x:auto}}
+  tr.hrow1 th{position:sticky; top:0; z-index:31}
+  tr.hrow2 th{position:sticky; top:29px; z-index:30; box-shadow:0 2px 4px rgba(7,41,66,.15)}
+  tr.hrow1 th.rowlbl{z-index:32}
+  table.mx{width:auto; border-collapse:separate; border-spacing:0; background:var(--card); border:1px solid var(--line)}
+  /* group header row */
+  table.mx th.rowlbl{background:var(--navy); color:#fff; text-align:left; padding:9px 14px; font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; white-space:nowrap; vertical-align:bottom; width:340px}
+  table.mx th.archgroup{height:29px; background:var(--arch); color:#fff; font-size:10px; text-transform:uppercase; letter-spacing:.6px; padding:6px 4px; text-align:center; border-left:2px solid #fff}
+  table.mx th.teamgroup{height:29px; background:var(--navy); color:#fff; font-size:10px; text-transform:uppercase; letter-spacing:.6px; padding:6px 4px; text-align:center; border-left:4px solid #0c2230}
+  .sublbl{display:block; font-weight:500; font-size:8.5px; opacity:.9; margin-top:3px; text-transform:none; letter-spacing:.2px; line-height:1.25; color:#ff9d94; white-space:normal}
+  table.mx th.archead{background:var(--arch); color:#fff; width:54px; font-size:10px; padding:7px 3px; text-align:center; cursor:pointer; vertical-align:bottom; border-left:1px solid #2c807e; transition:background .12s}
+  table.mx th.archead:hover{background:#2c807e}
+  table.mx th.colhead{background:var(--navy); color:#fff; padding:9px 4px; font-size:11.5px; text-align:center; cursor:pointer; vertical-align:bottom; width:54px}
+  table.mx th.colhead:first-of-type{border-left:4px solid #0c2230}
+  table.mx th.colhead:hover{background:#0c3450}
+  table.mx th.archgroup{cursor:pointer}
+  table.mx th.archgroup.collapsed, table.mx th.archead.collapsed{cursor:pointer; background:#2c807e}
+  table.mx th.colhead small{display:block; color:var(--green); font-size:8px; text-transform:uppercase; letter-spacing:.3px; font-weight:600; margin-top:2px; white-space:normal; line-height:1.15}
+  table.mx th.colhead .open{font-size:7.5px; color:#9fb6c7; display:block; margin-top:3px}
+
+  tr.cluster td{background:#eef0ee; border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:8px 12px; cursor:pointer; font-weight:700; color:var(--navy); font-size:12.5px; position:sticky; top:var(--clustertop,113px); z-index:20}
+  tr.cluster.out td{position:sticky; top:var(--clustertop,113px); z-index:20}
+  tr.cluster.out td{background:#f3eee4; color:#8a6a2b}
+  tr.cluster td .tw{display:inline-block; width:14px; color:var(--muted); font-size:10px; transition:transform .15s}
+  tr.cluster.collapsed td .tw{transform:rotate(-90deg)}
+  tr.cluster td .cnt{color:var(--muted); font-weight:500; font-size:10.5px; margin-left:6px}
+
+  tr.leaf{cursor:pointer}
+  tr.leaf td{border-bottom:1px solid #efe9dd; font-size:12.5px}
+  tr.leaf td.lbl{padding:7px 14px 7px 24px; cursor:pointer; color:var(--ink); white-space:normal; width:340px; max-width:340px}
+  tr.leaf td.lbl:hover{background:#eef6f2; color:var(--uniq)}
+  tr.leaf td.lbl .info{color:#b9c2c9; font-size:10px; margin-left:5px}
+  tr.leaf td.acell{text-align:center; width:54px; background:var(--archtint); border-left:1px solid var(--archline)}
+  tr.leaf td.acell:first-of-type{border-left:2px solid var(--arch)}
+  tr.leaf td.cell{text-align:center; border-left:1px solid #f1ebe0}
+  table.mx th.colhead.pdiv, table.mx td.cell.pdiv{border-left:4px solid #0c2230}
+  tr.leaf td.cell.shaded{background:#faf9f5}
+  td.cell.solo-light{background:#fbe0e3} td.cell.solo-deep{background:#f0939c}
+  tr.leaf:hover td{background:#faf8f3}
+  tr.leaf:hover td.lbl{background:#eef6f2}
+  tr.leaf:hover td.acell{background:#dff0ee}
+  tr.leaf:hover td.cell.shaded{background:#f3f0e8}
+  tr:hover td.cell.solo-light{background:#f7d2d6} tr:hover td.cell.solo-deep{background:#ec828d}
+  tr.leaf td.lbl.nolvl2{background:#fdf3f5}
+  tr.leaf:hover td.lbl.nolvl2{background:#f9e8eb}
+  table.ptbl td.plbl.nolvl2{background:#fdf3f5}
+  table.ptbl tr.leaf:hover td.plbl.nolvl2{background:#f9e8eb}
+  .gap td.lbl::after{content:" mezera"; color:var(--red); font-size:9px; text-transform:uppercase; letter-spacing:.5px; margin-left:8px; font-weight:700; opacity:.85}
+
+  /* modal */
+  .ovl{position:fixed; inset:0; background:rgba(7,18,28,.55); display:none; align-items:flex-start; justify-content:center; padding:40px 16px; z-index:50; overflow:auto}
+  .ovl.on{display:flex}
+  .modal{background:#fff; border-radius:13px; max-width:860px; width:100%; box-shadow:0 18px 60px rgba(0,0,0,.3); overflow:hidden}
+  .modal .mhead{padding:16px 22px; color:#fff; display:flex; justify-content:space-between; align-items:flex-start; gap:14px}
+  .modal .mhead.cap{background:linear-gradient(95deg,var(--navy),var(--blue))}
+  .modal .mhead.per{background:linear-gradient(95deg,var(--navy),var(--uniq))}
+  .modal .mhead.arch{background:linear-gradient(95deg,#0d3b3a,var(--arch))}
+  .modal .mhead h2{margin:0; font-size:18px}
+  .modal .mhead .role{font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--green); margin-top:3px}
+  .modal .x{background:rgba(255,255,255,.18); border:0; color:#fff; width:30px; height:30px; border-radius:50%; font-size:17px; cursor:pointer; flex:none}
+  .modal .x:hover{background:rgba(255,255,255,.32)}
+  .modal .mbody{padding:20px 22px 24px}
+  .archrow{display:flex; gap:7px; flex-wrap:wrap; margin-bottom:14px}
+  .archrow .ach{display:inline-flex; align-items:center; gap:5px; background:var(--archtint); border:1px solid var(--archline); border-radius:7px; padding:4px 9px; font-size:11.5px}
+  .archrow .ach b{color:var(--arch); font-weight:600}
+  .capsec{margin:12px 0}
+  .capsec h4{margin:0 0 4px; font-size:10.5px; text-transform:uppercase; letter-spacing:1px; color:var(--blue)}
+  .capsec.bez h4{color:var(--red)}
+  .capsec p{margin:0; font-size:13.5px}
+  .holders{margin-top:14px; padding-top:12px; border-top:1px solid var(--line); font-size:12.5px}
+  .holders .who{display:inline-flex; align-items:center; gap:6px; margin-right:14px; white-space:nowrap}
+
+  .pgrid{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+  @media(max-width:680px){.pgrid{grid-template-columns:1fr}}
+  .pgrid h3.sec{font-size:10.5px; text-transform:uppercase; letter-spacing:1.2px; color:var(--blue); margin:14px 0 6px; font-weight:700}
+  .pgrid ul{margin:0; padding-left:17px} .pgrid li{margin:3px 0; font-size:12.5px}
+  .pnl{border-radius:8px; padding:11px 14px; margin:8px 0}
+  .pnl.uniq{background:var(--uniqbg); border-left:4px solid var(--uniq)} .pnl.uniq h3.sec{color:var(--uniq); margin-top:0}
+  .pnl.strop{background:var(--stropbg); border-left:4px solid var(--stropbar)} .pnl.strop h3.sec{color:#9a6516; margin-top:0}
+  .pnl.verify{background:var(--verbg); border-left:4px solid var(--verbar); border:1px dashed var(--verbar)} .pnl.verify h3.sec{color:var(--verink); margin-top:0}
+  .pnl.verify ul{padding-left:0} .pnl.verify li{position:relative; padding-left:20px; list-style:none}
+  .pnl.verify li::before{content:"?"; position:absolute; left:0; color:#fff; background:var(--verbar); width:14px; height:14px; line-height:14px; text-align:center; font-size:10px; border-radius:50%; font-weight:700}
+  .prof h3.sec{font-size:10.5px; text-transform:uppercase; letter-spacing:1.2px; color:var(--blue); margin:16px 0 6px; font-weight:700}
+  .prof ul,.prof ol{margin:0; padding-left:18px} .prof li{margin:4px 0; font-size:13px}
+  .prof .papraxe{display:grid; grid-template-columns:1fr 1fr; gap:0; border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-bottom:6px}
+  @media(max-width:600px){.prof .papraxe{grid-template-columns:1fr}}
+  .prof .pp{padding:11px 14px} .prof .pp.papir{background:#f2f4f7} .prof .pp.real{background:var(--uniqbg); border-left:2px solid var(--uniq)}
+  .prof .pp h4{margin:0 0 4px; font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--muted)}
+  .prof .pp p{margin:0; font-size:12.5px}
+  .prof .note-line{font-size:11.5px; color:var(--muted); font-style:italic; margin:0 0 8px}
+  .prof .pnl{border-radius:8px; padding:12px 15px; margin:10px 0}
+  .prof .pnl.uniq{background:var(--uniqbg); border-left:4px solid var(--uniq)} .prof .pnl.uniq h3.sec{color:var(--uniq); margin-top:0}
+  .prof .pnl.strop{background:var(--stropbg); border-left:4px solid var(--stropbar)} .prof .pnl.strop h3.sec{color:#9a6516; margin-top:0}
+  .prof .pnl.strop p{font-size:12.5px; margin:6px 0}
+  .prof .pnl.verify{background:var(--verbg); border:1px dashed var(--verbar); border-left:4px solid var(--verbar)} .prof .pnl.verify h3.sec{color:var(--verink); margin-top:0}
+  .prof .pnl.verify .vd{font-size:11.5px; color:var(--verink); font-style:italic; margin:0 0 6px}
+  .prof .pnl.verify ul{padding-left:0} .prof .pnl.verify li{list-style:none; position:relative; padding-left:20px}
+  .prof .pnl.verify li::before{content:"?"; position:absolute; left:0; color:#fff; background:var(--verbar); width:14px; height:14px; line-height:14px; text-align:center; font-size:10px; border-radius:50%; font-weight:700}
+  .prof .arrow{color:#9a6516; font-size:12px; margin:6px 0 0}
+  .panelhead{font-size:14px; color:var(--navy); margin:28px 0 2px; font-weight:700}
+  .panelhead span{color:var(--muted); font-weight:400; font-size:12px}
+  .panelnote{font-size:12px; color:var(--muted); margin:0 0 8px; max-width:880px}
+  table.ptable{width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line)}
+  table.ptable th{background:var(--navy); color:#fff; text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; padding:8px 11px}
+  table.ptable td{border-bottom:1px solid #efe9dd; padding:9px 11px; font-size:12.5px; vertical-align:top}
+  table.ptable tbody tr{cursor:pointer}
+  table.ptable tbody tr:hover td{background:#eef6f2}
+  table.ptable td.pc{width:30px; text-align:center}
+  table.ptable td.pn{font-weight:600; color:var(--navy)}
+  table.ptable td.prisk{color:var(--ink); font-size:12px}
+  .tb{display:inline-block; padding:2px 9px; border-radius:20px; font-size:10.5px; font-weight:700; color:#fff; white-space:nowrap}
+  .t-none,.t-low{background:var(--red)} .t-med{background:var(--orange)} .t-high{background:var(--grn)}
+  .mb{display:inline-block; padding:2px 9px; border-radius:5px; font-size:10.5px; font-weight:600; background:#eef0ee; color:var(--navy); white-space:nowrap}
+  table.ptbl{width:auto; border-collapse:collapse; background:#fff; border:1px solid var(--line)}
+  table.ptbl th.prowlbl{background:var(--navy); color:#fff; text-align:left; padding:8px 12px; font-size:11px; text-transform:uppercase; letter-spacing:.5px; white-space:nowrap}
+  table.ptbl th.pcol{background:var(--navy); color:#fff; width:54px; font-size:9.5px; padding:7px 3px; text-align:center; vertical-align:bottom; white-space:normal; line-height:1.1}
+  table.ptbl th.pcol.shaded{background:#123040}
+  table.ptbl th.pextra{background:var(--navy); color:#fff; padding:8px 11px; font-size:11px; text-transform:uppercase; letter-spacing:.5px; white-space:nowrap}
+  table.ptbl td.plbl{padding:7px 12px; white-space:nowrap; color:var(--ink); font-weight:600; cursor:pointer}
+  table.ptbl tr.leaf:hover td.plbl{color:var(--uniq)}
+  table.ptbl td.pextra{padding:7px 11px; text-align:center}
+  .foot{margin-top:24px; font-size:11px; color:var(--muted); text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="htxt">
+      <h1>2ET – Mapa kompetencí</h1>
+      <div class="sub" id="subtitle"><p>Mapa potřebných kompetencí pro různé varianty nastavení budoucí organizace 2ET + assessment kompetencí, které dnes v týmu máme, které chybí, a které dnes závisí jen na jednom člověku.</p><p>Potřebné kompetence lze filtrovat podle jednotlivých lidí i podle archetypů organizace, které tuto kompetenci vyžadují.</p><p>Kliknutím na název kompetence, typ organizace nebo člena týmu získáte dodatečný detail.</p></div>
+    </div>
+    <div class="hmeta">
+      <span class="draft" id="privtag">DRAFT, verze 0.2, 18. 6. 2026<br><b>CONFIDENTIAL. Do not share.</b></span>
+    </div>
+  </header>
+
+  <div class="legend">
+    <span class="grp"><b>Kritičnost pro archetyp:</b>
+      <span><i class="cdot cred"></i>kritické</span>
+      <span><i class="cdot corange"></i>důležité</span>
+    </span>
+    <span class="grp ppl"><b>Úroveň kompetence člena týmu:</b>
+      <span><i class="hdot h2"></i> silná</span>
+      <span><i class="hdot h1 half"></i> částečná</span>
+    </span>
+  </div>
+
+  <div class="controls">
+    <button class="btn" onclick="toggleAll(false)">Rozbalit vše</button>
+    <button class="btn" onclick="toggleAll(true)">Sbalit vše</button>
+    <span class="filterbar" id="filterbar"></span>
+  </div>
+
+  <div class="mxscroll"><table class="mx" id="mx"><tbody id="mxbody"></tbody></table></div>
+</div>
+
+<div class="ovl" id="ovl" onclick="if(event.target===this)closeM()">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>window.VIEW_OVERRIDE='public';</script>
+<script>
+/* =================== DATA =================== */
+const ARCHES = [
+  {id:'plna', short:'Plná', name:'Plná ambice 2ET', desc:'transformační motor – možná dnešní deklarovaná ambice',
+    look:'Plnohodnotná organizace s vlastní analýzou, komunikací i advokacií, a zároveň vehikl, který propojuje a sdružuje majitele firem s vysokou přidanou hodnotou v Česku. Seniorní jádro, špičkové výstupy, přímý vliv na politiku i veřejnou debatu.',
+    does:'Vlastní analýzy a policy návrhy · framuje a kontroluje výstupy · lobbuje za konkrétní opatření na několika úrovních · ovlivňuje veřejnou debatu · propojuje a sdružuje majitele klíčových firem.',
+    notdoes:'Čisté PR · nepodložené výstupy · témata bez dopadu.',
+    examples:'European Round Table'},
+  {id:'ttank', short:'Think-tank', name:'Expertní autorita / think-tank', desc:'vliv skrze citovanou expertizu, bez lobbingu a kampaní',
+    look:'Respektovaný expertní hlas: vlastní studie, data a oponentura, které ministerstva, novináři a odborná veřejnost citují. Autorita stojí na kvalitě a nezávislosti analýzy, ne na přímém tlaku ani na kampani.',
+    does:'Produkuje vlastní analýzy a studie, drží metodické standardy a oponenturu, publikuje pod svým jménem, vystupuje na konferencích a v médiích jako expert a buduje znalostní síť.',
+    notdoes:'Nelobuje přímo u rozhodovatelů (vliv jde přes citovanou autoritu, ne přes uzavřené schůzky), nevede kampaně ani PR a neprodává konkrétní řešení konkrétnímu ministrovi.',
+    examples:'IDEA CERGE-EI, PAQ Research, Bruegel (analytická část), národohospodářské ústavy.'},
+  {id:'advok', short:'Advok.', name:'Advokační / lobbingový vehikl', desc:'lobbingový vehikl -- možná dnešní deklarovaná ambice',
+    look:'Organizace zaměřená na přímý vliv na legislativu a rozhodovatele. Pracuje s policy memy, briefingy, schůzkami a follow-upem; obsah slouží primárně cílené advokacii.',
+    does:'Píše policy návrhy vč. legální textace, briefuje ministry a úředníky, buduje sítě partnerských organizací, orchestruje schůzky a follow-up, pěstuje přístup k VIP a Evropské komisi a mobilizuje ambasadory pro sdílené advokační kampaně.',
+    notdoes:'Nedělá masovou komunikaci jako hlavní produkt. Obsah vyrábí pro konkrétní opatření a konkrétního rozhodovatele, nikoli pro logiku "ekonomicky s vyšší přidanou hodnotou" celkově.',
+    examples:'Svaz průmyslu, advokační koalice typu EU Inc., oborové asociace, Změna k lepšímu, lobby firmy'},
+  {id:'komun', short:'Komun.', name:'Komunikační vehikl', desc:'produkce a distribuce obsahu a promo vlastních členů',
+    look:'Obsahová a mediální platforma, jejímž těžištěm je redakce a distribuční kanály. Produkuje a šíří sdělení k veřejnosti přes články, posty, podcast a video.',
+    does:'Tvoří a umisťuje obsah (rozhovory, příběhy, přebírání jednoduchých čísel), vede sociální sítě a podcast, buduje dosah a vztahy s novináři a zesiluje narativ jiných organizací.',
+    notdoes:'Nedělá přímou advokacii (komunikace je cíl) · nedělá hlubokou vlastní analýzu',
+    examples:'Díky že můžem, Solvo Institut, Index Prosperity'},
+  {id:'infl', short:'Influence', name:'Influence vehikl', desc:'komunikace + vliv: PR, kampaně, formování názoru',
+    look:'Komunikace za účelem dosažení vlivu: cílem je posun názoru, široké veřejnosti či elity. Pracuje přes PR, kampaně a narativ a opírá se o silnou kampaňovou a kreativní kapacitu.',
+    does:'Staví narativ a kampaně za specifickým cílem, měří a optimalizuje jejich dopad, pracuje s médii i influencery a vyrábí high-quality video a kreativu.',
+    notdoes:'Nemusí mít hloubkovou interní analýzu. Nedělá nutně přímý lobbing. Nestaví se do nutně role neutrálního analytika.',
+    examples:'Mobilizační kampaně typu Milion chvilek, PR-driven advokační kampaně, Evropa v datech.'},
+  {id:'klub', short:'Klub', name:'Byznys klub', desc:'síť a setkávání byznys lídrů',
+    look:'Klub pro budování vztahů lídrů českého byznysu a sdílení perspektiv a zkušeností. Vlastní výstup je minimální a provoz lehký. Obsah nebo advokacie ad hoc.',
+    does:'Pořádá setkání, večeře a konference, propojuje lidi a udržuje prestiž.',
+    notdoes:'Nedělá vlastní obsah, advokacii nebo cílenou komunikaci (kromě zvědomování high-level témat a zvedání profilu organizace).',
+    examples:'YPO, Aspen Young Leaders, byznysové komory a kluby.'},
+];
+const MEMBERS = [];
+/* cr = [Plná,Think-tank,Advok,Komun,Influence,Klub] */
+const CLUSTERS = [
+  {id:'strategy', name:'Strategie, agenda a obsahový rám', leaves:[
+    {id:'s_strat', n:'Návrh strategie spolku', cr:'rooorg', h:'000000000',
+      w:'Schopnost identifikovat dlouhodobě klíčové oblasti, které pomohou spolku doručit dopad, interně i externě, a determinovat potřebné výstupy a zdroje.',
+      y:'Strategii potřebujeme, abychom dosáhli změn, které jsme si předsevzali a na jejíž vizi jsme získali členskou základnu a donory.',
+      x:'2ET přešlapuje na místě a pouze reaguje na požadavky nejhlasitějších členů. Bez strategie nebudeme schopní zaměstnat kvalitní talent.'},
+    {id:'f1', n:'Strategický rám výstupů', cr:'rrrorg', h:'000000000',
+      w:'Schopnost před každým výstupem udělat krok zpět a říct, proč ho děláme, jakou pozici za 2ET zastáváme a jak zapadá do širšího cíle ekonomické transformace.',
+      y:'Bez tohoto rámu je i dobrá analýza jen hromada faktů; teprve rám z ní udělá srozumitelnou pozici, kterou politik, úředník, advokační partner nebo novinář pochopí a o kterou se může opřít.',
+      x:'Výstupy odcházejí bez kontextu, matou externí partnery a 2ET působí jako produkční dílna s náhodnými nápady, které nejsou kredibilní.'},
+    {id:'f2', n:'Obsahová a výzkumná agenda', cr:'rorgrg', h:'000000000',
+      w:'Vědomé rozhodování, kterým tématům 2ET řekne ano, kterým ne a v jakém pořadí je bude řešit.',
+      y:'Malá organizace s velkou ambicí se rozpadne na rozptylu; jasná agenda soustředí omezenou kapacitu tam, kde má největší páku, a dává členům i donorům srozumitelný příběh, za čím jdeme.',
+      x:'2ET reaguje na požadavky nejhlasitějších členů a na aktuální zprávy; energie se tříští mezi desítku témat a žádné se nedotáhne do dopadu.'},
+    {id:'f3', n:'Cross-domain syntéza', cr:'rrrgog', h:'000000000',
+      w:'Schopnost rozpoznat stejný strukturální vzorec napříč nesouvisejícími světy – třeba mezi řízením ministerstva, restrukturalizací firmy a správou investičního portfolia.',
+      y:'Tady leží jádro odlišnosti 2ET: nabídnout úředníkovi řešení, které v jeho resortu nikoho nenapadlo, protože pochází odjinud a on ho nezná.',
+      x:'2ET zůstává u doménových klišé a běžné analytiky, kterou umí kdokoli, a ztrácí přesně to, čím se měl odlišovat. Většina problémů, které 2ET pojmenovává je známá >10 let, jen nikdo neodpracoval realistické řešení.'},
+    {id:'c6', n:'Narativ / architektura sdělení', cr:'rooorg', h:'000000000',
+      w:'Hlavní příběh a několik klíčových sdělení, na která se navěšuje všechno, co 2ET říká, aby to dávalo dohromady smysl.',
+      y:'Drží konzistenci napříč články, panely i schůzkami, takže veřejnost i rozhodovatelé vnímají 2ET jako jeden hlas, ne jako sérii nesouvisejících výstupů.',
+      x:'Jednotlivé výstupy si protiřečí, panely vypadají jako náhodné titulky bez společné linky nebo jasného směru, a sdělení se navzájem ředí.'},
+    {id:'f4', n:'Závěrečná kontrola kvality výstupu', cr:'rrrorg', h:'000000000',
+      w:'Poslední kontrola, jestli je výstup věcně správný, logicky soudržný, technicky bez chyb a na úrovni řemesla, než jde ven.',
+      y:'Rozhoduje, jestli to, co opustí 2ET, drží pohromadě. Jiná otázka než reputační dopad: tady jde o vnitřní kvalitu, ne o vnější vyznění.',
+      x:'Ven jdou výstupy s chybami, nedotaženou logikou nebo technicky rozbité, čímž si 2ET podrývá svou reputaci.'},
+    {id:'f5', n:'Reputační a politické čtení výstupu', cr:'rororg', h:'000000000',
+      w:'Čtení, jak výstup dopadne navenek: koho může poškodit, jaké politické a reputační riziko nese, jestli je v dané chvíli chytré ho pod naším jménem vypustit.',
+      y:'Věcně správný výstup může být reputačně nebo politicky nevýhodný. Tahle vrstva posuzuje vnější dopad, ne vnitřní kvalitu.',
+      x:'Pustíme ven něco správného, co nás ale politicky nebo reputačně poškodí, protože nikdo nepřečetl, jak to bude přijato. Kvůli špatně použitým slovům se zvedne proti návrhu vlna nevole ať už je merit věci jakýkoli.'},
+    {id:'c7', n:'Měření dosahu a dopadu', cr:'rororg', h:'000000000',
+      w:'Schopnost definovat cílová a operativní KPI. A na to navázané sledování toho, co komunikace a advokacie reálně způsobí, včetně schopnosti to vykázat.',
+      y:'Bez měření 2ET neví, jestli mění názory, nebo jen produkuje obsah do prázdna; teprve čísla oddělí dopad od aktivity.',
+      x:'Rozhodnutí padají poslepu a Správní rada nemá jak vidět, co spolek zajistil a způsobil. Rozhodování se řeší podle anekdot a toho, kdo je hlasitějším.'},
+  ]},
+  {id:'analytics', name:'Analytika', leaves:[
+    {id:'a1', n:'Makroekonomická analýza', cr:'rroggg', h:'000000000',
+      w:'Vlastní analýza makroekonomických témat (růst, produktivita, trh, veřejné finance) do hloubky, ne jen přebírání cizích zdrojů.',
+      y:'Makro je páteř ekonomického vyprávění 2ET; bez vlastní hloubky nejsme před ekonomy obhajitelní.',
+      x:'Ztráta kredibility u odborné veřejnosti, protože idea "ekonomicky s vyšší přidanou hodnotou" bude jen PR nálepka a neobstojí v odborné konverzaci.'},
+    {id:'a_biz', n:'Byznys a podniková analýza', cr:'rrrgog', h:'000000000',
+      w:'Porozumění tomu, jak fungují firmy a odvětví: business modely, konkurenceschopnost, co podniky reálně brzdí.',
+      y:'2ET stojí na byznys komunitě; bez podnikové optiky mluvíme o ekonomice odtrženě od firem.',
+      x:'Naše návrhy nesedí na realitu firem; byznys nás nebere vážně. Navrhovaná řešení jsou akademická, protože nejsou zasazená do kontextu toho, jak firmy a jejich manažeři reálně fungují.'},
+    {id:'a_edu', n:'Analýza vzdělávání a trhu práce', cr:'rrrgog', h:'000000000',
+      w:'Doménová analýza vzdělávání a trhu práce: dovednosti, nabídka a poptávka práce, vazba školství na ekonomiku.',
+      y:'Talent a vzdělávání jsou kritickým jádrem transformace; bez téhle domény nám chybí klíčový kus skládačky.',
+      x:'K tématu vzdělávání a trhu práce mluvíme povrchně, bez vlastní opory. Návrhy neobstojí před lidmi, kteří v systému reálně pracují.'},
+    {id:'a_kap', n:'Analýza kapitálového trhu', cr:'rrrgog', h:'000000000',
+      w:'Doménová analýza fungování kapitálu: bankovní systém, PE/VC, penzijní fondy, burza, evropský kapitálový trh, incentivy investorů.',
+      y:'Kapitál je kritickým jádrem transformace; bez téhle domény nám chybí klíčový kus skládačky.',
+      x:'K tématu kapitálového trhu mluvíme povrchně, bez vlastní opory.'},
+    {id:'a2', n:'Rešerše a sběr dat', cr:'rrroog', h:'000000000',
+      w:'Dohledání zdrojů, dat a zahraniční praxe, ze kterých se staví každý vážnější výstup.',
+      y:'Je to surovina pro každé memo i briefing; bez dobré rešerše stojí výstup na dojmech místo na faktech.',
+      x:'Tvrzení se opírají o pocity, protistrana je snadno vyvrátí a 2ET vypadá nepoctivě nebo amatérsky. Vymýšlíme řešení nekvalitně a na koleni, ačkoli svět je možná už dávno nalezl.'},
+    {id:'a_int', n:'Strukturované interviews', cr:'rrrgog', h:'000000000',
+      w:'Dohledání informací a porozumění situaci skrz strukturovaná interviews s klíčovými stakeholdery v byznysu, státu i neziskovém sektoru.',
+      y:'Většina témat, na kterých 2ET pracuje, není popsaná a informace o nich nejsou dostupné z veřejných zdrojů. Systém funguje neformálně, zahraniční studie nejsou aplikovatelné, české neexistují.',
+      x:'Tvrzení nedávají smysl insiderům tématu a 2ET je vnímaná jako naivní a nekredibilní.'},
+    {id:'a_arch', n:'Architektura datové analýzy', cr:'rroggg', h:'000000000',
+      w:'Návrh, jak má datová analýza vypadat: jaké otázky, jaká data, jaké kalkulace, jaká metoda a struktura vstupů a výstupů, abychom měli použitelný výstup (pro analytický backup nebo pro komunikaci).',
+      y:'Založení na faktech je jedním z core principů 2ET, kterým získáváme kredibilitu mezi politiky, na úřadech a v médiích.',
+      x:'Analýzy odpovídají na špatně položené otázky; neumíme využít výstupy v advokacii nebo komunikaci tak, jak bychom potřebovali.'},
+    {id:'a_model', n:'Datové modelování a analýza dat', cr:'rroggg', h:'000000000',
+      w:'Vlastní zpracování dat: modely, výpočty a kvantitativní analýza nad konkrétními daty.',
+      y:'Odlišuje doložené tvrzení od názoru; nese tíhu v debatě s úředníky a ekonomy. Dává nám "edge" směrem k úředníkům, kterým můžeme pomoct a získat si je tím pro to, co potřebujeme.',
+      x:'Spoléháme na cizí výpočty; nemáme jak vlastní tvrzení podložit daty. Neumíme pomoct překonat typické překážky, jako je evaluace dopadu na státní rozpočet. Neumíme využít kanálu "datové žurnalistiky", protože nemáme co dát.'},
+    {id:'a4', n:'Příprava policy memo a podkladů', cr:'rorggg', h:'000000000',
+      w:'Stručný věcný dokument, který shrne problém, klíčová data a navrhovaný směr řešení na pár stránek.',
+      y:'Je to základní jednotka advokační práce; fyzický podklad, který necháváme u rozhodovatele a o který se opírá další jednání.',
+      x:'Advokační schůzky probíhají jen u obecných řečí; partner nemá co poslat dál svému týmu a téma po schůzce umírá.'},
+    {id:'a5', n:'Překlad analýzy do policy doporučení', cr:'rorggg', h:'000000000',
+      w:'Posun od toho, co data ukazují, k tomu, co s tím má konkrétní rozhodovatel udělat.',
+      y:'Analýza bez doporučení je akademické cvičení; rozhodovatel potřebuje slyšet konkrétní krok, který po něm chceme a který umí sám obhájit.',
+      x:'Výstupy končí u zjištění; rozhodovatel odchází s tím, že neví, co se po něm žádá, a udělá si vlastní, jiný závěr.'},
+    {id:'a_legis', n:'Tvorba konkrétních legislativních návrhů', cr:'rgrggg', h:'000000000',
+      w:'Převedení policy doporučení do konkrétního, paragrafovaného návrhu nebo přesného opatření, které rozumí legislativnímu a vládnímu procesu.',
+      y:'Mezi „mělo by se" a reálnou změnou zákona je propast; tahle kapacita ji překlenuje. Konkrétnější a náročnější než obecné doporučení.',
+      x:'Zůstáváme u obecných doporučení; nikdo je nedotáhne do podoby, kterou lze reálně prosadit. Slovy úředníka: "Nazdárci nikoho nezajímají, \'mělo by se\' nás nikam posunout nepomůže."'},
+    {id:'a6', n:'Metodické standardy / oponentura', cr:'rroggg', h:'000000000',
+      w:'Pravidla, jak se v 2ET dělá analýza, aby obstála, plus věcná oponentura cizích i vlastních výstupů.',
+      y:'Drží laťku napříč autory a chytá chyby uvnitř dřív, než je najde a využije protistrana.',
+      x:'Kvalita kolísá podle autora; chyba se odhalí až venku a platí se za ni kredibilitou celého spolku.'},
+    {id:'a7', n:'AI nástroje / vibe-coding prototypy', cr:'rrogog', h:'000000000',
+      w:'Stavba jednoduchých nástrojů, platforem a prototypů s pomocí AI, bez plného vývojářského týmu.',
+      y:'Umožní rychle proměnit nápad ve funkční nástroj za zlomek času a peněz; malý tým tím násobí svou kapacitu.',
+      x:'Každý nápad čeká na externího vývojáře; experimentování je pomalé, drahé a většinou se nekoná.'},
+    {id:'a_dash', n:'Dashboardy a klikací prototypy', cr:'rrooog', h:'000000000',
+      w:'Návrh a stavba interaktivních dashboardů a klikacích prototypů, které zpřístupní data nebo myšlenku.',
+      y:'Dobrý prototyp nebo dashboard je argument sám o sobě: ukáže věc, která by jinak zůstala v tabulce, a partner si na ni může sáhnout.',
+      x:'Nápady zůstávají v dokumentech a tabulkách; nemáme jak je ukázat funkčně a srozumitelně.'},
+  ]},
+  {id:'comms', name:'Komunikace', leaves:[
+    {id:'c1', n:'Copywriting a obecné texty', cr:'rororg', h:'000000000',
+      w:'Napsat čtivý a přesný obecný text: článek, post, promo, které umí podpořit naši advokační logiku.',
+      y:'Kvalitní copywriting potřebujeme pro jednoduché vysvětlení konceptů, o které nám jde. Hlavně u těch stakeholderů, kteří nemají chuť číst dlouhé podklady.',
+      x:'Běžné výstupy jsou nepřesné a nepodpoří advokacii anebo jsou psány příliš komplikovanou a nesrozumitelnou řečí. Neumíme je targetovat obecenstvu.'},
+    {id:'c_adv', n:'Náročné texty s advokační logikou', cr:'rgrgog', h:'000000000',
+      w:'Pečlivě stavěné texty, které nesou advokační logiku: argumentační oblouk, pozici, framing pro rozhodovatele.',
+      y:'Tady se obsah mění v nástroj vlivu; jiná disciplína než obecné psaní, kterou i skvělý běžný textař nemusí mít.',
+      x:'Produkujeme externí texty, ale není za nimi advokační strategie.'},
+    {id:'c_camp', n:'Kampaňová a PR strategie pro téma', cr:'rgogrg', h:'000000000',
+      w:'Strategie, jak konkrétní téma protlačit do veřejné a odborné debaty: sled kroků, kanály, kdo a kdy co řekne.',
+      y:'Strategie kampaní je to, co nám pomůže prosadit ta témata, která politici nemají zájem posunout a která proto potřebují širokou shodu (nebo její zdání) v mediálním prostoru.',
+      x:'Produkujeme obsah, ale není dlouhodobě zacílený na konkrétní dopad.'},
+    {id:'c2', n:'Návrh vizuálů a vizuální identita', cr:'rorgog', h:'000000000',
+      w:'Vizuální zpracování výstupů a jednotná identita napříč materiály. Barvy, fonty, zarovnání, vizuální elementy.',
+      y:'Vizuál rozhoduje o tom, jestli výstup působí důvěryhodně; je to první dojem dřív, než si publikum přečte jediné slovo.',
+      x:'Materiály vypadají nekonzistentně a amatérsky, externí schůzky začínají s partnerem, který nás podvědomě vnímá neprofesionálně.'},
+    {id:'c_viz', n:'Datová vizualizace / infografika', cr:'roroog', h:'000000000',
+      w:'Schopnost převést čísla a argument do statického vizuálu (graf, infografika, schéma), který sám o sobě prodá myšlenku.',
+      y:'Jeden dobře nastrukturovaný graf vysvětluje podstatu lépe než text: vizualizuje trend, srovnání, apod. a je snadno zapamatovatelnější.',
+      x:'Kvalitní analýza se nepoužije, protože je nesrozumitelná.'},
+    {id:'c3', n:'Mediální placement + vztahy s novináři', cr:'rogrrg', h:'000000000',
+      w:'Schopnost dostat obsah do médií, rozumět tomu, jaké typy materiálů novináře zajímají, a udržet funkční vztahy v redakcích.',
+      y:'Média jsou jedním z našich hlavních komunikačních kanálů, které nám budují značku a důvěru a pomáhají v advokacii.',
+      x:'Klesá dosah vůči médiím, místo vztahů založených na důvěře musíme platit za access nebo musíme produkovat výstupy s mnohem vyšší laťkou kvality. Novinářům se musíme složitě obhajovat.'},
+    {id:'c_so1', n:'Tvorba obsahu pro sociální sítě', cr:'rogrrg', h:'000000000',
+      w:'Vymýšlení a tvorba příspěvků, vizuálů a formátů pro sociální sítě.',
+      y:'Pro seniorní byznysové publikum jsou sociální média (především LinkedIn) kritickým komunikačním kanálem. Kvalitně zpracovaný obsah (copywriting, vizuály) pomáhají budovat kredibilitu 2ET.',
+      x:'Klesá dosah především vůči širší byznysové komunitě.'},
+    {id:'c_so2', n:'Růst, distribuce a placená propagace', cr:'rggrrg', h:'000000000',
+      w:'Práce s dosahem: distribuce, růst publika, placená propagace a její cílení.',
+      y:'Obsah bez distribuce nikdo neuvidí; dosah k širší byznysové komunitě a odborné veřejnosti rozhoduje o tom, jestli se investice do obsahu vrátí.',
+      x:'Obsah vidí jen pár vlastních sledujících; investice do tvorby se nevrací a kanály nerostou.'},
+    {id:'c_so3', n:'Komunita a interakce na sítích', cr:'rggorg', h:'000000000',
+      w:'Reakce, moderování diskusí a budování vztahu s publikem a komunitou na sítích.',
+      y:'Sítě jsou obousměrný kanál; interakce buduje vztah s publikem a drží 2ET v kontaktu s tím, jak témata rezonují.',
+      x:'Publikum se neangažuje, kanály působí mrtvě a 2ET ztrácí zpětnou vazbu, jak sdělení dopadají.'},
+    {id:'c5', n:'Dramaturgie podcastu', cr:'rogrog', h:'000000000',
+      w:'Obsahové i produkční vedení podcastu od výběru hostů po výsledný díl.',
+      y:'Formát, který buduje hloubku tématu a dlouhodobé vztahy s hosty; pozvání do podcastu je zároveň elegantní vstupní brána ke vztahu s VIP.',
+      x:'2ET přichází o pravidelný formát, o publikum kolem něj i o nenásilný způsob, jak otevírat vztahy s hosty.'},
+    {id:'c8', n:'Krizová komunikace', cr:'rrroro', h:'000000000',
+      w:'Připravený postup pro reputačně citlivou situaci, než nastane, ne až v jejím průběhu.',
+      y:'Citlivé téma nebo nečekaný zvrat může přijít kdykoli; improvizace pod tlakem situaci zpravidla zhorší.',
+      x:'Každá krize se řeší narychlo a ad hoc; reakce přijde pozdě a nekonzistentně a škoda na reputaci se zbytečně násobí.'},
+    {id:'c_keynote', n:'Veřejné vystupování za 2ET', cr:'rorgog', h:'000000000',
+      w:'Reprezentace 2ET na pódiu, v panelu nebo ve studiu jako mluvčí za účelem předávání našich myšlenek.',
+      y:'Část vlivu vzniká tím, že je za 2ET konzistentně vidět konkrétní důvěryhodná tvář, která opakuje tutéž hlavní message.',
+      x:'Témata 2ET nemají na veřejnosti tvář, což limituje naše advokační a komunikační kompetence.'},
+    {id:'c_strat', n:'Komunikační strategie a redakční plánování', cr:'rggrrg', h:'000000000',
+      w:'Rozhodování, co, kdy a jakým způsobem 2ET komunikuje napříč všemi kanály (média, sociální sítě, konference, vystoupení), jak téma graduje, a sladění s advokacií i s partnery u propojených témat.',
+      y:'Cílená komunikace spolku musí mít směr a smysl, má-li za cíl zajistit změnu nebo rozšíření povědomí o specifickém tématu.',
+      x:'Bez redakčního plánu se komunikace tříští na jednotlivé výstupy bez směru.'},
+    {id:'c_mtrain', n:'Mediální trénink a příprava ambasadorů', cr:'rggorg', h:'000000000',
+      w:'Příprava ambasadorů a spřátelených expertů na mediální výstupy: jak zvládnout náročnější rozhovor, držet sdělení a nezůstat jen u typické lifestyle diskuse.',
+      y:'Ambasador v médiích ideálně mluví za 2ET a opatření, kterých se snažíme dosáhnout.',
+      x:'Mediální příležitost může vyjít naprázdno z pohledu prosazování opatření 2ET.'},
+    {id:'c_ghost', n:'Ghostwriting (texty pod cizím jménem)', cr:'oggoog', h:'000000000',
+      w:'Psaní článků, komentářů a vyjádření, která vycházejí pod jménem ambasadorů nebo spřátelených expertů, v jejich hlasu, ale s naším sdělením (primárně v médiích, občas na sítích).',
+      y:'Ghostwriting násobí dopad ambasadorů 2ET, kde ne všichni mají čas / jsou ochotní / dokážou napsat zacílený článek ohledně opatření 2ET.',
+      x:'Snížená kapacita publikování jménem ambasadorů.'},
+    {id:'c_monit', n:'Analýza veřejného mínění a médií', cr:'rgoorg', h:'000000000',
+      w:'Sledování mediálního prostoru: kde a jak rezonují naše témata, klíčová slova, a postupné se učení toho, jak lépe naše myšlenky komunikačně "prodat".',
+      y:'Sledování dopadu a zlepšování cílení kanálů nebo messagingu.',
+      x:'Komunikujeme naslepo.'},
+    {id:'c_own', n:'Vlastní online kanály', cr:'oggoog', h:'000000000',
+      w:'Budování a provoz vlastních online kanálů (newsletter, Substack, WhatsApp skupiny a podobně), přes které mluvíme přímo k publiku, bez prostředníka.',
+      y:'Vlastní kanál je publikum, které nám nikdo nevezme; nezávislý na médiích a algoritmech. Tam si i vybíráme vlastní obecenstvo, ke kterému můžeme hovořit přesně tak, jak potřebujeme.',
+      x:'Závisíme jen na cizích kanálech a médiích.'},
+    {id:'c_infl', n:'Práce s influencery', cr:'rggorg', h:'000000000',
+      w:'Spolupráce s influencery a tvůrci obsahu, kteří dokážou naše téma dostat k publiku, na které jinak nedosáhneme.',
+      y:'Influenceři otevírají publikum mimo dosah tradičních médií i naší vlastní sítě; fungují paralelně mimo standardní média.',
+      x:'Zůstáváme v bublinách LinkedInu a "čtenářů Hospodářských novin", což značně snižuje náš dosah.'},
+    {id:'c_prteam', n:'Spolupráce s PR týmy ambasadorů', cr:'oggoog', h:'000000000',
+      w:'Slaďování ambasadorské komunikace pro 2ET (vystoupení na konferenci, rozhovor v médiích, komentář) s mantinely a/nebo strategií jejich PR/komunikačního týmu.',
+      y:'Řada ambasadorů má profesionály (nebo týmy), které hlídají způsob, kterým tito ambasadoři veřejně vystupují. Pro ambasadorskou komunikaci ohledně 2ET jsme často odkázáni právě na tyto lidi, kteří potřebují pochopit, co od jejich komunikace chceme.',
+      x:'Snížená kapacita publikování jménem ambasadorů.'},
+  ]},
+  {id:'advocacy', name:'Advokacie a vztahy s rozhodovateli', leaves:[
+    {id:'mon_op', n:'Sledování legislativy a politického dění', cr:'rorgog', h:'000000000',
+      w:'Operativní sledování, co se děje v legislativě a politice: které návrhy se hýbou, kdo je drží, co se kde otevírá.',
+      y:'Bez přehledu, co se v legislativě a politice hýbe, reagujeme pozdě a naslepo; je to provozní vstup pro celou advokacii i komunikaci.',
+      x:'O klíčových návrzích se dozvídáme z médií, když už je pozdě; advokační okna propadají nevyužitá.'},
+    {id:'mon_strat', n:'Strategické načasování našich intervencí', cr:'rgrgrg', h:'000000000',
+      w:'Rozhodnutí, kdy a do jakého okna vstoupit s naším tématem; co a kdy chceme nebo máme prosazovat.',
+      y:'Správné memo ve špatný týden je ztracená práce; načasování rozhoduje, jestli se naše témata potkají s legislativním kalendářem a politickou poptávkou.',
+      x:'Vstupujeme do debat mimo okno; práce vyjde naprázdno, nebo ji mezitím obsadí někdo jiný se svým framingem.'},
+    {id:'v1', n:'Policy briefing ministrům', cr:'rorggg', h:'000000000',
+      w:'Příprava a vedení samotného jednání s ministrem nebo náměstkem: argumenty, vedení rozhovoru, čtení situace v místnosti.',
+      y:'Vrcholný okamžik advokacie; tady se rozhoduje, jestli z měsíců přípravy vznikne reálný posun, nebo jen zdvořilá schůzka.',
+      x:'K ministrům se buď nedostaneme, nebo přijdeme nepřipravení; druhou šanci u stejného stolu zpravidla nedostaneme.'},
+    {id:'v_onepager', n:'Tvorba advokačního one-pageru a krátké prezentace', cr:'rorggg', h:'000000000',
+      w:'Vytvoření hutného one-pageru nebo krátké prezentace, kterou lze položit rozhodovateli na stůl.',
+      y:'Artefakt, který po schůzce zůstane na stole a mluví za nás; rozhodovatel ho přepošle svému týmu a tím náš argument putuje dál.',
+      x:'Přijdeme bez podkladu, nebo s materiálem, který nikoho nezaujme; po schůzce nezůstane nic, co by za nás pracovalo.'},
+    {id:'v2', n:'Příprava a orchestrace advokačních schůzek', cr:'rgrggg', h:'000000000',
+      w:'Vlastnictví celého advokačního procesu: briefy, sled kroků a follow-up, ne jen jednotlivá schůzka.',
+      y:'Advokacie je řetěz navazujících schůzek a follow-upů; bez vlastníka procesu se trhá mezi kroky a kontakty vyhasínají.',
+      x:'Schůzky probíhají bez přípravy a navazující kroky nikdo neudělá; rozjednané příležitosti propadnou a partneři ztrácejí dojem profesionality.'},
+    {id:'v3', n:'Přístup k VIP / decision-makerům (CZ)', cr:'rgrgog', h:'000000000',
+      w:'Vztahy a otevřené dveře k českým ministrům, náměstkům a klíčovým hráčům.',
+      y:'Bez otevřených dveří nemá ani nejlepší analýza kam dopadnout; přístup rozhoduje, jestli se pozice vůbec dostane k tomu, kdo rozhoduje.',
+      x:'Vyrábíme pozice, které rozhodovatelé nikdy neuvidí; vliv zůstává na papíře.'},
+    {id:'v4', n:'Přístup k EU / Evropské komisi', cr:'oooggg', h:'000000000',
+      w:'Vztahy a věcný most do Evropské komise na úrovni konkrétních lidí, v praxi především kontakty a spolupráce s týmem Zastoupení Evropské komise v Praze.',
+      y:'U témat jako EU Inc. se rozhoduje na evropské úrovni, potřebujeme partnera pro navigaci koridorů v Bruselu. EU má zároveň možnost ovlivňovat politiku v Česku skrz nástroje jako je Evropský Semestr.',
+      x:'2ET přichází o vlivného spojence pro konkrétní advokační práci.'},
+    {id:'v5', n:'Due diligence partnerů', cr:'rgrgro', h:'000000000',
+      w:'Prověření, koho zveme a s kým se spojujeme pod hlavičkou 2ET, z hlediska reputačního rizika.',
+      y:'Jakožto čistě zájmový spolek nemá 2ET formální páky směrem k médiím nebo veřejnému sektoru. Dveře jsou otevřené kvůli kredibilitě spolku a jeho členů, a o to je nutné dbát.',
+      x:'Máme riziko ztráty pracně získané reputace.'},
+    {id:'v6', n:'Briefing ambasadorů', cr:'rorooo', h:'000000000',
+      w:'Vybavení ambasadorů tím, co mají říkat a proč, obsahově i komunikačně, aniž by to vytvářelo velký tlak na potřebu jejich osobního času.',
+      y:'Ambasadoři jsou distribuční a politická páka 2ET; bez briefu táhnou pozici naslepo a nepřesně.',
+      x:'Ambasador na schůzce neumí vysvětlit, proč na tématu záleží a jakou roli hraje 2ET, což vede ke zmatení partnerů.'},
+    {id:'v7', n:'Budování koalic a partnerství', cr:'rgrgrg', h:'000000000',
+      w:'Získávání dalších organizací a hráčů za společnou pozici.',
+      y:'Koalice násobí váhu; jeden hlas se dá přehlušit, deset spojených hlasů už ne. Různé hlasy jsou důležité pro různé instituce nebo politické strany.',
+      x:'2ET stojí na své pozici sama a je snazší ji ignorovat.'},
+    {id:'v_coord', n:'Koordinace koalic a partnerství', cr:'rgrgrg', h:'000000000',
+      w:'Průběžné řízení a údržba už existujících koalic a partnerství: kdo co dělá, komunikace, společné kroky.',
+      y:'Mnoho partnerství a koalic jsou "side jobs" pro zapojené partnery, a potřebují proto cílený management. 2ET v nich má často nejvíc co ztratit z hlediska reputace.',
+      x:'Postavená koalice se rozsype, partneři ztratí důvěru ve společný postup a příště se přidají hůř.'},
+    {id:'v_compliance', n:'Lobbing compliance', cr:'rgrgog', h:'000000000',
+      w:'Plnění formálních povinností spojených s advokacií: registrace, evidence kontaktů, transparentní vykazování.',
+      y:'Regulatorní compliance.',
+      x:'Hrozí sankce pro organizaci a její board (a potenciálně mediální problém).'},
+  ]},
+  {id:'event', name:'Event management', leaves:[
+    {id:'ev1', n:'Koncepce a dramaturgie akce', cr:'rorogr', h:'000000000',
+      w:'Koncept, téma, dramaturgie a sestavení programu akce včetně volby a oslovení řečníků.',
+      y:'Dramaturgie a správní řečníci dělají z akce zážitek s pointou; v identitě klubu je setkání přímo hlavním produktem.',
+      x:'Akce bez tahu a pointy; program se skládá na poslední chvíli a kvalitní řečníci už mají obsazené kalendáře.'},
+    {id:'ev2', n:'Produkce a logistika (místo, technika)', cr:'rorooo', h:'000000000',
+      w:'Místo, technika, harmonogram a dodavatelé zajištění tak, aby v den akce vše klaplo.',
+      y:'Produkce rozhoduje, jestli připravený obsah doběhne k publiku bez zádrhelu, nebo se utopí v technickém chaosu.',
+      x:'Výpadky techniky a zmatek na místě poškodí značku před celým sálem najednou; dojem z měsíců příprav zkazí jeden špatný mikrofon.'},
+    {id:'ev6', n:'Komunikace a promo akce', cr:'roorrg', h:'000000000',
+      w:'Propagace akce a veškerá komunikace kolem ní před akcí, během i po.',
+      y:'I skvělá akce bez promo zůstane poloprázdná; komunikace násobí počet lidí, ke kterým se dostane.',
+      x:'Akce proběhne bez publika a bez mediální stopy; ví o ní jen ti, kdo na ní seděli.'},
+    {id:'ev_mod', n:'Moderování diskusních sessions', cr:'roorro', h:'000000000',
+      w:'Vedení a moderování panelů a diskusí: držet tah, klást ostré otázky, vytěžit z hostů to podstatné.',
+      y:'Moderace rozhoduje, jestli z panelu vznikne myšlenka, nebo jen sled monologů.',
+      x:'Diskuse se rozplizne, hosté mluví mimo a publikum si neodnese žádnou myšlenku, kterou by si spojilo s 2ET.'},
+    {id:'ev_fa', n:'Vytěžení akce: advokacie', cr:'rgrggg', h:'000000000',
+      w:'Příprava advokačních setkání a momentů před akcí (kdo se s kým má bavit o čem). Poté převedení kontaktů a diskusí do konkrétních dalších kroků.',
+      y:'Hodnota akce advokačně je závislá na tom, co se z akce vytěží. Akce je jen prostředkem.',
+      x:'Investice do eventu se nevrátí v podobě posunu advokačních témat.'},
+    {id:'ev_fc', n:'Vytěžení akce: komunikace', cr:'rggrro', h:'000000000',
+      w:'Komunikační vytěžení akce: naplánování focení/videa, poté recap články, posty, sestříhané klipy do podcastu a na sítě, podpora mediálního pokrytí.',
+      y:'Jedna akce může žít týdny po skončení, pokud se z ní vytěží obsah. Maximalizuje návratnost práce, kterou jsme do akce vložili + vytváří nám obsah, z kterého můžeme střednědobě žít.',
+      x:'Investice do eventu se nevrátí v podobě komunikačního výtlaku.'},
+  ]},
+  {id:'leadership', name:'Vedení, governance a lidé', leaves:[
+    {id:'o1', n:'Strategické vedení a orchestrace', cr:'rororg', h:'000000000',
+      w:'Držení směru a koordinace toho, kdo co kdy dělá napříč obsahem, komunikací a advokacií.',
+      y:'Je to lepidlo mezi moduly; bez něj se tým rozjede do dílčí taktiky a celek ztratí směr, a je potřeba v každé možné identitě 2ET.',
+      x:'Chybí střední vrstva, všechno visí na jednom člověku a to paralyzuje organizaci.'},
+    {id:'o3', n:'Governance / vztah se Správní radou', cr:'rgrooo', h:'000000000',
+      w:'Rozhodovací práva, posvěcování výstupů a fungující dialog se Správní radou.',
+      y:'Bez funkční governance přichází veto na poslední chvíli a ztráta důvěry; identita byznys klubu navíc stojí celá na vztahu se Správní radou.',
+      x:'Paralýza organizace.'},
+    {id:'o2', n:'Rozvoj a mentoring týmu', cr:'rororg', h:'000000000',
+      w:'Systematické zvedání úrovně lidí v týmu, pokud si nejsme schopní najmout kvalitní experty.',
+      y:'2ET není připravena platit za seniorní lidi (pokud vůbec v zemi lidé s potřebným profilem existují). Tím pádem jsme limitovaní na rozvoj těch lidí, které máme nebo umíme zaplatit.',
+      x:'Paralýza organizace.'},
+    {id:'o_talent', n:'Talent pipeline a nábor', cr:'rororg', h:'000000000',
+      w:'Hledání, získávání a zapracování nových lidí, zejména seniorních.',
+      y:'Chybějící střední vrstva se nevyřeší jen rozvojem stávajících lidí; musíme umět seniorní lidi najít a získat, případně je vychovat, pokud na trhu nejsou.',
+      x:'Strukturální díra zůstává, všechno dál visí na dvou lidech a růst ambicí není podložený růstem týmu.'},
+    {id:'o_align', n:'Budování alignmentu mezi ambasadory', cr:'rgoorr', h:'000000000',
+      w:'Schopnost dostat ambasadory na společnou strategickou linku (ohledně strategie 2ET, pracovních skupin anebo přístupu k jednotlivým opatřením).',
+      y:'Síla a unikátnost 2ET je v demonstraci sjednocení byznysu. To ale potřebuje sjednocení mnoha různých názorů a pochopení problému.',
+      x:'2ET působí navenek nekonzistentně a interně se nesjednotí za smysluplným cílem.'},
+    {id:'o_ceoroom', n:'Vedení jednání se seniorními byznysmeny', cr:'rorgro', h:'000000000',
+      w:'Schopnost vést meeting s lidmi zvyklými na seniorní boardroom diskuse: jasná agenda, podklady, rámování možností, tah k rozhodnutí.',
+      y:'Kompetence je klíčová proto, abychom správně využili času seniorních lidí (nebo vůbec získali ochotu pro jejich zapojení).',
+      x:'Ztratíme autoritu nebo ochotu spolupráce se seniorními lidmi.'},
+    {id:'c_intcom', n:'Interní komunikace', cr:'rgrgor', h:'000000000',
+      w:'Udržování interní proinformovanosti o spolku, našich opatřeních, eventech, apod. - způsobem, který Správní Rada a ambasadoři dovedou vstřebat.',
+      y:'Vytíženost ambasadorů (kombinovaná se zájmem o spolek) znamená, že potřebujeme řadu různých kanálů toho, jak co nejúsporněji dostat k ambasadorům všechny informace o spolku, které je zajímají (se správným tónem a očekávaným servisem).',
+      x:'Snížená důvěra ambasadorů ve fungování a smysluplnost spolku.'},
+  ]},
+  {id:'ops', name:'Provoz, zdroje a dárci', leaves:[
+    {id:'o4', n:'Projektové řízení a dotahování', cr:'rororo', h:'000000000',
+      w:'Oddělení účelu od provedení, jasný vlastník, termíny a dotažení úkolu až do konce.',
+      y:'Bez projektového řízení se i dobrý nápad rozplyne v nedotažení; platí to v každé identitě, kterou si 2ET vybere.',
+      x:'Úkoly bez vlastníka padají mezi židle a přípravy se rozjedou až po tlaku shora; organizace jede na urgence, ne na systém.'},
+    {id:'o5', n:'Procesy, šablony a institucionální paměť', cr:'ooogog', h:'000000000',
+      w:'Zdokumentovaná páteř toho, jak 2ET dělá věci tak, aby proces fungoval i v decentralizované organizaci pracovních skupin s různorodou kvalitou vedení.',
+      y:'Promění osobní know-how v opakovatelný proces a paměť organizace a snižuje závislost na konkrétních lidech, a to i v decentralizované architektuře, kterou jsme si pro fungování zvolili.',
+      x:'Paralýza organizace, nedotahování témat, nekvalitní výstupy, ztráta vnější kredibility.'},
+    {id:'o_km', n:'Knowledge management', cr:'rrogog', h:'000000000',
+      w:'Udržení podkladů, dat a dokumentů uspořádaných na jednom místě, chytře pojmenovaných a dohledatelných. Víme, odkud čísla bereme, umíme je dohledat.',
+      y:'Pořádek v datech a dokumentech šetří čas, brání chybám a umožňuje nám rychle připravit dodatečný podklad pro diskusi na obsahové téma, které jsme historicky zpracovali.',
+      x:'Podklady žijí roztroušeně na různých discích, čísla si protiřečí (různé logiky výpočtů apod.) a s odchodem členů týmu ztrácíme dokumentaci.'},
+    {id:'o7', n:'Fundraising a vztahy s dárci', cr:'rrroro', h:'000000000',
+      w:'Zajištění financování a vztahů s dárci a sponzory: získávání zdrojů i průběžná péče o ně.',
+      y:'Bez peněz organizace neexistuje; diverzifikovaná základna dárců zároveň chrání nezávislost vůči jednotlivým hlasům.',
+      x:'Závislost na pár dárcích; každý výpadek nebo neshoda ohrožuje provoz a oslabuje vyjednávací pozici spolku.'},
+    {id:'o_budget', n:'Management rozpočtu', cr:'oooooo', h:'000000000',
+      w:'Sestavení, sledování a řízení rozpočtu organizace i jednotlivých aktivit a projektů.',
+      y:'Bez řízení rozpočtu se utrácí bez přehledu; finanční disciplína drží provoz zdravý v každé podobě organizace.',
+      x:'Náklady utíkají a chybí přehled, kam peníze tečou; problém se ukáže, až když je pozdě, a důvěra donorů tím trpí.'},
+    {id:'o_budan', n:'Analýzy rozpočtu, timesheetů, apod.', cr:'oooooo', h:'000000000',
+      w:'Vyhodnocování rozpočtu, časových výkazů a provozních dat jako podklad pro rozhodování vedení.',
+      y:'Provozní data ukazují, kam jde čas a peníze; bez nich vede vedení poslepu.',
+      x:'Vedení rozhoduje bez přehledu o vlastní ekonomice a kapacitě; přetížení lidí a plýtvání se odhalí pozdě.'},
+    {id:'o6', n:'Řízení ambasadorů a stakeholderů', cr:'rgrgoo', h:'000000000',
+      w:'Vztahy s ambasadory a partnery, jejich zapojování do práce 2ET, a péče o ně jakožto o klíčový zdroj financí.',
+      y:'Ambasadoři jsou nositelé práce na konkrétních opatřeních; bez řízení se rozpadají, a u byznys klubu je tahle koordinace jádrem provozu.',
+      x:'Ambasadoři ztrácejí směr a práce na opatřeních, kterou měli táhnout, vázne.'},
+    {id:'o8', n:'Community management', cr:'rgogor', h:'000000000',
+      w:'Budování a péče o komunitu ambasadorů, členů a podporovatelů, jejich zapojování a aktivace.',
+      y:'Komunita je distribuční i vztahová páka 2ET; bez péče vyhasíná, a v identitě byznys klubu je komunita přímo produktem.',
+      x:'Ambasadoři a podporovatelé ztrácejí zapojení; síť, na které 2ET stojí, postupně vyhasíná.'},
+    {id:'o_crm', n:'Správa CRM', cr:'rororr', h:'000000000',
+      w:'Systematické držení kontaktů a interakcí na jednom místě: kdo je kdo, kdy jsme s ním mluvili, co jsme slíbili, jaký je další krok.',
+      y:'Dopad 2ET stojí na vztazích; bez systému se ale vztahový kapitál drolí mezi lidmi a odchází s nimi. Máme mnoho paralelních témat, bez systému se neobejdeme.',
+      x:'Kontakty žijí v hlavách jednotlivců, follow-up se ztrácí, externí partneři jsou zmatení, protože s námi řeší různé věci zvlášť.'},
+    {id:'o_vendor', n:'Řízení dodavatelů a externích partnerů', cr:'ooooog', h:'000000000',
+      w:'Zadání, výběr a řízení externích dodavatelů napříč obory, od webu a grafiky po právo a účetnictví.',
+      y:'Co 2ET nestaví samo, musí umět přesně zadat a zkontrolovat; jinak dostává dodávky, které nejde použít.',
+      x:'Špatně zadané a nezkontrolované dodávky projdou a chyba se ukáže až v ostrém použití.'},
+    {id:'o_learn', n:'Interní vyhodnocování a proces učení', cr:'ooooog', h:'000000000',
+      w:'Systematické vyhodnocování vlastní práce a poučení z ní: retrospektivy, co fungovalo a co příště jinak.',
+      y:'Organizace, která se neučí ze své práce, opakuje chyby; tohle dělá ze zkušenosti kapitál.',
+      x:'Každý projekt začíná od nuly a stejné chyby se opakují; zkušenost odchází s projektem, místo aby se ukládala do organizace.'},
+  ]},
+];
+
+const ASSETS = [
+  {id:'n1', n:'Síť mezi novináři', cr:'roorrg', h:'000000000', transfer:'low',
+   w:'Osobní a důvěrné vztahy s konkrétními lidmi napříč redakcemi.',
+   y:'Je to vztahový kapitál, který se nedá najmout a odchází z organizace spolu s člověkem, který ho drží.',
+   x:'2ET ztrácí přímý kanál do médií a jeho znovuvybudování trvá roky.'},
+  {id:'n2', n:'Síť mezi ekonomy a ekonomickými komentátory', cr:'rorrrg', h:'000000000', transfer:'low',
+   w:'Důvěra a kontakty v komunitě ekonomů a ekonomických novinářů.',
+   y:'Je to vztahový kapitál, který se nedá najmout a odchází z organizace spolu s člověkem, který ho drží.',
+   x:'2ET ztrácí věcnou kredibilitu i síť, která tuto kredibilitu amplifikuje.'},
+  {id:'n3', n:'Síť mezi politiky / VIP', cr:'rgrgrg', h:'000000000', transfer:'med',
+   w:'Dlouhodobě budované vztahy přímo k rozhodovatelům a VIP.',
+   y:'Je to hlavní důvod, proč 2ET existuje jako vztahová infrastruktura napříč rozhodovateli; u byznys klubu je tahle síť přímo produktem.',
+   x:'Bez sítě se z 2ET stává think-tank bez dveří, který má co říct, ale nemá komu.'},
+  {id:'n_off', n:'Síť mezi úředníky', cr:'rorggg', h:'000000000', transfer:'low',
+   w:'Osobní vztahy a kontakty mezi úředníky na ministerstvech a v institucích.',
+   y:'Úředníci připravují a drží detail legislativy; bez vztahů k nim se k reálnému vlivu nedostaneme.',
+   x:'Nevíme, kde jsou uvnitř úřadů blokátory; advokacie naráží na neviditelnou zeď.'},
+  {id:'n_intl', n:'Mezinárodní znalostní síť', cr:'rrogog', h:'000000000', transfer:'low',
+   w:'Napojení 2ET na nejlepší evropskou praxi a špičkové experty v jeho tématech.',
+   y:'V malé zemi je hodnota v tom přinést to nejlepší zvenčí; je to klíčové pro tezi 2ET o exposure a přenosu vzorců.',
+   x:'2ET zůstává v české bublině a odřízne se od zdroje nových vzorců i kvalitní praxe.'},
+  {id:'n4', n:'Vlastní veřejná reputace / jméno', cr:'ooogog', h:'000000000', transfer:'none',
+   w:'Osobní renomé, pod kterým konkrétní člověk publikuje a za výstup ručí svým jménem.',
+   y:'Je to nepřenosné aktivum, které dává výstupům váhu; u identity influence vehiklu je osobní kredibilita přímo motorem dosahu.',
+   x:'S odchodem člověka odejde celé a nedá se nahradit náborem ani penězi.'},
+];
+
+const SOURCING = [
+  {id:'x1', n:'Web a digitální platformy (externí)', cr:'rggrrg', h:'000000000', mode:'řízeno externě',
+   w:'Schopnost zadat a zkontrolovat externí web studio, ne web stavět vlastními silami.',
+   y:'Web 2ET nepotřebuje umět vyrobit; potřebuje ho umět přesně zadat a převzít.',
+   x:'Špatně zadaný a nezkontrolovaný web projde i technicky nefunkční a chyba se ukáže, až když ho vidí veřejnost.'},
+  {id:'x3', n:'Grafika a video (externí)', cr:'rggrrg', h:'000000000', mode:'řízeno externě',
+   w:'Zadání a řízení grafiky a videa u externí agentury.',
+   y:'Dodá vyšší produkční hodnotu bez vlastního týmu; v identitě influence vehiklu je navíc video jádrem kampaní.',
+   x:'Výsledek je buď draho pořízený ad hoc, nebo vizuálně nekonzistentní napříč výstupy.'},
+  {id:'x2', n:'Právní servis pro 2ET', cr:'rororo', h:'000000000', mode:'čistě externí',
+   w:'Zajištění a řízení externí právní podpory pro smlouvy, compliance a rizika.',
+   y:'Smlouvy a citlivá témata nesou reputační i finanční riziko, které potřebuje právní krytí; není to ale core 2ET.',
+   x:'Právní agendu nikdo pořádně nevlastní a organizace nese rizika naslepo, dokud se neprojeví.'},
+  {id:'src_legis', n:'Legislativní práce pro advokacii', cr:'rgrggg', h:'000000000', mode:'čistě externí',
+   w:'Externí příprava paragrafovaného znění a legislativně-technické práce pro naše advokační cíle.',
+   y:'Kvalitní paragrafy vyžadují právní řemeslo, které neděláme in-house; musíme umět zadat a zkontrolovat.',
+   x:'Návrhy jsou právně chatrné nebo neprůchodné a zadání externím právníkům nikdo neřídí.'},
+  {id:'x4', n:'Účetnictví a finance (externí)', cr:'oooooo', h:'000000000', mode:'čistě externí',
+   w:'Externí účetní a finanční provoz organizace.',
+   y:'Je to nutné zázemí, ne core 2ET; v identitě byznys klubu se přes něj navíc vybírají a spravují členské příspěvky.',
+   x:'2ET nese provozní a daňové riziko a vedení se rozptyluje do administrativy místo do své práce.'},
+];
+
+const PROFILES = {};
+
+/* =================== RENDER =================== */
+const CRITCLS = {r:'cred', o:'corange', g:'cgreen'};
+const CRITNAME = {r:'kritické', o:'důležité', g:'nepotřebuje'};
+
+function holderDot(v){
+  if(v===2) return '<span class="hdot h2" title="silně"></span>';
+  if(v===1) return '<span class="hdot h1 half" title="částečně"></span>';
+  return '';
+}
+function isGap(h){ return !/[1-9]/.test(h); }
+function soloMark(item){
+  if(!item.cr.includes('r')) return null;
+  const arr=[...item.h];
+  const twos=arr.map((d,i)=>({d,i})).filter(o=>o.d==='2');
+  const ones=arr.filter(d=>d==='1').length;
+  const bearers=arr.filter(d=>d>'0').length;
+  if(twos.length===1 && ones===0 && bearers===1) return {idx:twos[0].i, cls:'solo-deep'};
+  if(twos.length===1 && ones>=1) return {idx:twos[0].i, cls:'solo-light'};
+  if(twos.length===0 && bearers===1) return {idx:arr.findIndex(d=>d>'0'), cls:'solo-light'};
+  return null;
+}
+
+// VIEW: 'full' (default, leadership) | 'public' (no people). Generator injects window.VIEW_OVERRIDE.
+const VIEW = (typeof window!=='undefined' && window.VIEW_OVERRIDE) || 'full';
+const showPeople = (VIEW !== 'public');
+const FUNNEL = '<svg class="fn" viewBox="0 0 16 16" width="10" height="10" aria-hidden="true"><path d="M1 2.4h14l-5.2 6.1v4.3l-3.6 1.8V8.5z"/></svg>';
+let showArch = true;
+let filterArch = null, filterPerson = null;
+
+// Status řádek; samotné filtrování se ovládá trychtýřem ⧩ v záhlaví sloupců.
+function buildFilterBar(){
+  const fb = document.getElementById('filterbar');
+  if(!fb) return;
+  if(!filterArch && !filterPerson){ fb.innerHTML=''; fb.classList.add('empty'); return; }
+  fb.classList.remove('empty');
+  const bits=[];
+  if(filterArch){ const a=ARCHES.find(x=>x.id===filterArch); bits.push(`<span class="ftag arch">${a.short}</span>`); }
+  if(filterPerson){ const m=MEMBERS.find(x=>x.id===filterPerson); bits.push(`<span class="ftag person">${m.name}</span>`); }
+  fb.innerHTML = `<span class="lab">Filtr</span>${bits.join('')}<span class="fcount" id="fcount"></span>`
+    + `<button class="clearf" onclick="clearFilters()">zrušit filtr ✕</button>`;
+}
+function setArchFilter(id){ filterArch = (filterArch===id)?null:id; buildFilterBar(); buildMatrix(); buildPanels(); }
+function setPersonFilter(id){ filterPerson = (filterPerson===id)?null:id; buildFilterBar(); buildMatrix(); buildPanels(); }
+function clearFilters(){ filterArch=null; filterPerson=null; buildFilterBar(); buildMatrix(); buildPanels(); }
+
+function buildMatrix(){
+  const tb = document.getElementById('mxbody');
+  const ac = showArch ? ARCHES.length : 1;
+  const total = 1 + ac + (showPeople?MEMBERS.length:0);
+  const archIdx = filterArch ? ARCHES.findIndex(a=>a.id===filterArch) : -1;
+  const personIdx = (showPeople && filterPerson) ? MEMBERS.findIndex(m=>m.id===filterPerson) : -1;
+  const archGroup = showArch
+    ? `<th class="archgroup" colspan="${ARCHES.length}" onclick="toggleArch()" title="Sbalit typy organizace">▾ Pro jaký typ organizace je kritická</th>`
+    : `<th class="archgroup collapsed" colspan="1" onclick="toggleArch()" title="Rozbalit typy organizace">▸ Krit.</th>`;
+  let html = '<tr class="hrow1">'
+    + `<th class="rowlbl" rowspan="2">Kompetence${showPeople?'<span class="sublbl">červeně = nikdo silný v týmu</span>':''}</th>`
+    + archGroup
+    + (showPeople?`<th class="teamgroup" colspan="${MEMBERS.length}">Kdo kompetenci drží<span class="sublbl">červeně = závislost na jednom člověku</span></th>`:'')
+    + '</tr>';
+  const archHeads = showArch
+    ? ARCHES.map(a=>`<th class="archead${filterArch===a.id?' fsel':''}" onclick="openArch('${a.id}')" title="${a.name} – ${a.desc}">${a.short}<span class="hfilt${filterArch===a.id?' on':''}" onclick="event.stopPropagation();setArchFilter('${a.id}')" title="Filtrovat na ${a.short}">${FUNNEL}</span></th>`).join('')
+    : `<th class="archead collapsed" onclick="toggleArch()" title="Rozbalit · zobrazena Plná ambice">Plná</th>`;
+  html += '<tr class="hrow2">'
+    + archHeads
+    + (showPeople?MEMBERS.map((m,i)=>`<th class="colhead${m.shaded?' shaded':''}${i===0?' pdiv':''}${filterPerson===m.id?' fsel':''}" onclick="openPerson('${m.id}')">${m.name}<small>${m.tag}</small><span class="hfilt person${filterPerson===m.id?' on':''}" onclick="event.stopPropagation();setPersonFilter('${m.id}')" title="Filtrovat na ${m.name}">${FUNNEL}</span><span class="open">${PROFILES[m.id]?'profil ▸':'–'}</span></th>`).join(''):'')
+    + '</tr>';
+  let shown=0, totcnt=0;
+  CLUSTERS.forEach(cl=>{
+    const rows=[];
+    cl.leaves.forEach(lf=>{
+      totcnt++;
+      if(archIdx>=0 && lf.cr[archIdx]==='g') return;
+      if(personIdx>=0 && lf.h[personIdx]==='0') return;
+      shown++;
+      const sm = soloMark(lf);
+      const noStrong = !lf.h.includes('2');
+      // červený název = chybí silný nositel; při filtru typu org. jen pokud je pro ten typ kritická (r)
+      const redName = showPeople && noStrong && (archIdx<0 || lf.cr[archIdx]==='r');
+      const archCells = showArch
+        ? ARCHES.map((a,i)=>`<td class="acell${filterArch===a.id?' fsel':''}" title="${a.short}: ${CRITNAME[lf.cr[i]]}">${lf.cr[i]==='g'?'':'<span class="cdot '+CRITCLS[lf.cr[i]]+'"></span>'}</td>`).join('')
+        : `<td class="acell" title="Plná: ${CRITNAME[lf.cr[0]]}">${lf.cr[0]==='g'?'':'<span class="cdot '+CRITCLS[lf.cr[0]]+'"></span>'}</td>`;
+      rows.push(`<tr class="leaf${showPeople&&isGap(lf.h)?' gap':''}" data-cl="${cl.id}" onclick="openCap('${cl.id}','${lf.id}')">`
+        + `<td class="lbl${redName?' nolvl2':''}">${lf.n}<span class="info">ⓘ</span></td>`
+        + archCells
+        + (showPeople?MEMBERS.map((m,i)=>`<td class="cell${m.shaded?' shaded':''}${i===0?' pdiv':''}${filterPerson===m.id?' fsel':''}${sm&&sm.idx===i?(' '+sm.cls):''}">${holderDot(+lf.h[i])}</td>`).join(''):'')
+        + '</tr>');
+    });
+    if(rows.length){
+      html += `<tr class="cluster${cl.out?' out':''}" onclick="toggleCluster('${cl.id}')">`
+        + `<td colspan="${total}"><span class="tw">▾</span>${cl.name}<span class="cnt">${rows.length}${cl.out?' · '+cl.note:''}</span></td></tr>`
+        + rows.join('');
+    }
+  });
+  tb.innerHTML = html;
+  const fc = document.getElementById('fcount');
+  if(fc) fc.textContent = (filterArch||filterPerson) ? `Zobrazeno ${shown} z ${totcnt}` : '';
+  setStickyOffsets();
+}
+// dynamicky dorovná lepicí offsety: hrow2 pod hrow1, sekční záhlaví pod celé záhlaví
+function setStickyOffsets(){
+  const r1 = document.querySelector('tr.hrow1'), r2 = document.querySelector('tr.hrow2');
+  if(!r1 || !r2) return;
+  const h1 = Math.round(r1.getBoundingClientRect().height);
+  const total = h1 + Math.round(r2.getBoundingClientRect().height);
+  document.querySelectorAll('tr.hrow2 th').forEach(th=>th.style.top = h1+'px');
+  document.documentElement.style.setProperty('--clustertop', total+'px');
+}
+function toggleArch(){ showArch = !showArch; buildMatrix(); }
+function toggleCluster(id){
+  const head = document.querySelector(`tr.cluster[onclick*="'${id}'"]`);
+  head.classList.toggle('collapsed');
+  const hide = head.classList.contains('collapsed');
+  document.querySelectorAll(`tr.leaf[data-cl="${id}"]`).forEach(r=>r.style.display = hide?'none':'');
+}
+function toggleAll(collapse){
+  CLUSTERS.forEach(cl=>{
+    const head = document.querySelector(`tr.cluster[onclick*="'${cl.id}'"]`);
+    head.classList.toggle('collapsed', collapse);
+    document.querySelectorAll(`tr.leaf[data-cl="${cl.id}"]`).forEach(r=>r.style.display = collapse?'none':'');
+  });
+}
+function findLeaf(clid, lfid){
+  const cl = CLUSTERS.find(c=>c.id===clid); return [cl, cl.leaves.find(l=>l.id===lfid)];
+}
+function capCard(item, ctxLabel, bezLabel){
+  const arch = ARCHES.map((a,i)=>`<span class="ach"><span class="cdot ${item.cr[i]==='g'?'cempty':CRITCLS[item.cr[i]]}"></span> <b>${a.short}</b></span>`).join('');
+  const holders = MEMBERS.map((m,i)=>({m, v:+item.h[i]})).filter(o=>o.v>0)
+    .map(o=>`<span class="who">${holderDot(o.v)} ${o.m.name}${o.v===1?' (částečně)':''}</span>`).join('');
+  return `<div class="mhead cap"><div><h2>${item.n}</h2><div class="role">${ctxLabel}</div></div><button class="x" onclick="closeM()">×</button></div>`
+    + `<div class="mbody">`
+    + `<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--arch);margin-bottom:6px;font-weight:700">Kritičnost podle typu organizace</div>`
+    + `<div class="archrow">${arch}</div>`
+    + `<div class="capsec"><h4>Co to je</h4><p>${item.w}</p></div>`
+    + `<div class="capsec"><h4>Proč pro druhou ekonomickou transformaci</h4><p>${item.y}</p></div>`
+    + `<div class="capsec bez"><h4>${bezLabel||'Co se stane, když to nemáme'}</h4><p>${item.x}</p></div>`
+    + (showPeople?`<div class="holders">${isGap(item.h)?'<b style="color:var(--red)">Dnes to nedrží nikdo z týmu – mezera.</b>':'<b>Drží dnes:</b> '+holders}</div>`:'')
+    + `</div>`;
+}
+function openCap(clid, lfid){ const [cl, lf] = findLeaf(clid, lfid); document.getElementById('modal').innerHTML = capCard(lf, cl.name); showM(); }
+function openAsset(id){ const a = ASSETS.find(x=>x.id===id); document.getElementById('modal').innerHTML = capCard(a, 'Reputační a vztahová aktiva', 'Co se stane při odchodu držitele'); showM(); }
+function openSource(id){ const a = SOURCING.find(x=>x.id===id); document.getElementById('modal').innerHTML = capCard(a, 'Make-or-buy / externí zdroje', 'Co se stane, když to neumíme zadat a uřídit'); showM(); }
+function openArch(id){
+  const a = ARCHES.find(x=>x.id===id);
+  document.getElementById('modal').innerHTML =
+    `<div class="mhead arch"><div><h2>${a.name}</h2><div class="role">${a.desc}</div></div><button class="x" onclick="closeM()">×</button></div>`
+    + `<div class="mbody">`
+    + `<div class="capsec"><h4>Jak by vypadala</h4><p>${a.look}</p></div>`
+    + `<div class="capsec"><h4>Co by dělala</h4><p>${a.does}</p></div>`
+    + `<div class="capsec bez"><h4>Co by nedělala</h4><p>${a.notdoes}</p></div>`
+    + `<div class="capsec"><h4>Podobné organizace</h4><p>${a.examples}</p></div>`
+    + `</div>`;
+  showM();
+}
+function openPerson(id){
+  const m = MEMBERS.find(x=>x.id===id);
+  const body = PROFILES[id]
+    ? `${PROFILES[id]}<p style="margin-top:14px;font-size:11.5px;color:var(--muted)">Plný profil: <a class="link" href="worksheet.html">souhrnný list →</a></p>`
+    : `<p style="font-size:13.5px">Profil zatím nevytvořen – role <b>${m.role}</b>. Ticky v matici jsou první odhad k revizi.</p>`;
+  document.getElementById('modal').innerHTML =
+    `<div class="mhead per"><div><h2>${m.name}</h2><div class="role">${m.role}</div></div><button class="x" onclick="closeM()">×</button></div>`
+    + `<div class="mbody">${body}</div>`;
+  showM();
+}
+function showM(){ document.getElementById('ovl').classList.add('on'); }
+function closeM(){ document.getElementById('ovl').classList.remove('on'); }
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeM(); });
+const TRANSFER = {none:'nepřenosné', low:'nízká', med:'střední', high:'vysoká'};
+function holderNames(h){ return MEMBERS.map((m,i)=>({m,v:+h[i]})).filter(o=>o.v>0).map(o=>o.m.name+(o.v===1?' (č.)':'')).join(', '); }
+function panelTable(items, openFn, firstHead, extraHead, extraCell){
+  const archIdx = filterArch ? ARCHES.findIndex(a=>a.id===filterArch) : -1;
+  const personIdx = (showPeople && filterPerson) ? MEMBERS.findIndex(m=>m.id===filterPerson) : -1;
+  const head = `<tr><th class="prowlbl">${firstHead}</th>`
+    + (showPeople?MEMBERS.map(m=>`<th class="pcol${m.shaded?' shaded':''}${filterPerson===m.id?' fsel':''}" onclick="openPerson('${m.id}')" style="cursor:pointer">${m.name}</th>`).join(''):'')
+    + (extraHead?`<th class="pextra">${extraHead}</th>`:'') + `</tr>`;
+  const vis = items.filter(it=>{
+    if(archIdx>=0 && it.cr[archIdx]==='g') return false;
+    if(personIdx>=0 && it.h[personIdx]==='0') return false;
+    return true;
+  });
+  const rows = vis.map(it=>{
+    const sm = soloMark(it);
+    return `<tr class="leaf" onclick="${openFn}('${it.id}')">`
+      + `<td class="plbl${showPeople&&!it.h.includes('2')&&(archIdx<0||it.cr[archIdx]==='r')?' nolvl2':''}">${it.n}</td>`
+      + (showPeople?MEMBERS.map((m,i)=>`<td class="cell${m.shaded?' shaded':''}${filterPerson===m.id?' fsel':''}${sm&&sm.idx===i?(' '+sm.cls):''}">${holderDot(+it.h[i])}</td>`).join(''):'')
+      + (extraHead?`<td class="pextra">${extraCell(it)}</td>`:'') + `</tr>`;
+  }).join('');
+  const empty = vis.length?'':`<tr><td class="plbl" colspan="${1+(showPeople?MEMBERS.length:0)+(extraHead?1:0)}" style="color:var(--muted)">— nic pro tento filtr —</td></tr>`;
+  return `<table class="ptbl"><tbody>${head}${rows}${empty}</tbody></table>`;
+}
+function buildPanels(){
+  const sp=document.getElementById('sourcingPanel'); if(sp) sp.innerHTML = panelTable(SOURCING,'openSource','Funkce',null,null);
+  const ap=document.getElementById('assetsPanel'); if(ap) ap.innerHTML = panelTable(ASSETS,'openAsset','Aktivum','Přenositelnost', it=>`<span class="tb t-${it.transfer}">${TRANSFER[it.transfer]}</span>`);
+}
+function applyView(){
+  if(showPeople) return;
+  const pt=document.getElementById('privtag'); if(pt) pt.innerHTML='Pracovní verze pro diskusi · verze 0.2, 18. 6. 2026';
+  const st=document.getElementById('subtitle'); if(st) st.innerHTML='<p>Mapa potřebných kompetencí pro různé varianty nastavení budoucí organizace 2ET. Potřebné kompetence lze filtrovat podle archetypů organizace, které danou kompetenci vyžadují.</p><p>Kliknutím na název kompetence nebo typ organizace získáte dodatečný detail.</p>';
+  const wn=document.getElementById('wipnote'); if(wn) wn.style.display='none';
+  document.querySelectorAll('.legend .ppl').forEach(e=>e.style.display='none');
+}
+applyView();
+buildFilterBar();
+buildMatrix();
+buildPanels();
+</script>
+</body>
+</html>
