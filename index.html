@@ -84,6 +84,11 @@
   .sublbl{display:block; font-weight:500; font-size:8.5px; opacity:.9; margin-top:3px; text-transform:none; letter-spacing:.2px; line-height:1.25; color:#ff9d94; white-space:normal}
   table.mx th.archead{background:var(--arch); color:#fff; width:54px; font-size:10px; padding:7px 3px; text-align:center; cursor:pointer; vertical-align:bottom; border-left:1px solid #2c807e; transition:background .12s}
   table.mx th.archead:hover{background:#2c807e}
+  /* veřejná verze (bez lidí): plné názvy archetypů, širší jednotné sloupce, vystředěno */
+  body.publicview table.mx{margin-left:auto; margin-right:auto}
+  body.publicview table.mx th.archead, body.publicview table.mx td.acell{min-width:132px; width:132px; max-width:132px}
+  body.publicview table.mx th.archead{font-size:11px; padding:8px 7px; line-height:1.22; letter-spacing:0; text-transform:none}
+  body.publicview .legend, body.publicview .controls{justify-content:center}
   table.mx th.colhead{background:var(--navy); color:#fff; padding:9px 4px; font-size:11.5px; text-align:center; cursor:pointer; vertical-align:bottom; width:54px}
   table.mx th.colhead:first-of-type{border-left:4px solid #0c2230}
   table.mx th.colhead:hover{background:#0c3450}
@@ -707,7 +712,7 @@ function buildMatrix(){
     + (showPeople?`<th class="teamgroup" colspan="${MEMBERS.length}">Kdo kompetenci drží<span class="sublbl">červeně = závislost na jednom člověku</span></th>`:'')
     + '</tr>';
   const archHeads = showArch
-    ? ARCHES.map(a=>`<th class="archead${filterArch===a.id?' fsel':''}" onclick="openArch('${a.id}')" title="${a.name} – ${a.desc}">${a.short}<span class="hfilt${filterArch===a.id?' on':''}" onclick="event.stopPropagation();setArchFilter('${a.id}')" title="Filtrovat na ${a.short}">${FUNNEL}</span></th>`).join('')
+    ? ARCHES.map(a=>`<th class="archead${filterArch===a.id?' fsel':''}" onclick="openArch('${a.id}')" title="${a.name} – ${a.desc}">${showPeople?a.short:a.name}<span class="hfilt${filterArch===a.id?' on':''}" onclick="event.stopPropagation();setArchFilter('${a.id}')" title="Filtrovat na ${a.short}">${FUNNEL}</span></th>`).join('')
     : `<th class="archead collapsed" onclick="toggleArch()" title="Rozbalit · zobrazena Plná ambice">Plná</th>`;
   html += '<tr class="hrow2">'
     + archHeads
@@ -842,6 +847,7 @@ function buildPanels(){
 }
 function applyView(){
   if(showPeople) return;
+  document.body.classList.add('publicview');
   const pt=document.getElementById('privtag'); if(pt) pt.innerHTML='Pracovní verze pro diskusi · verze 0.2, 18. 6. 2026';
   const st=document.getElementById('subtitle'); if(st) st.innerHTML='<p>Mapa potřebných kompetencí pro různé varianty nastavení budoucí organizace 2ET. Potřebné kompetence lze filtrovat podle archetypů organizace, které danou kompetenci vyžadují.</p><p>Kliknutím na název kompetence nebo typ organizace získáte dodatečný detail.</p>';
   const wn=document.getElementById('wipnote'); if(wn) wn.style.display='none';
